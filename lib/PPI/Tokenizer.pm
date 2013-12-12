@@ -130,6 +130,7 @@ sub new {
 		line_length  => undef,
 		line_cursor  => undef,
 		line_count   => 0,
+		label_colon_candidates => undef,
 
 		# Parse state
 		token        => undef,
@@ -461,6 +462,7 @@ sub _fill_line {
 	$self->{line_cursor} = -1;
 	$self->{line_length} = length $line;
 	$self->{line_count}++;
+	$self->{label_colon_candidates} = undef;
 
 	1;
 }
@@ -523,6 +525,17 @@ sub _process_next_line {
 	}
 
 	return 1;
+}
+
+sub _label_colon_candidates {
+	my $self = shift;
+	return $self->{label_colon_candidates} ||= [
+		grep {
+				  ( ":" eq substr $self->{line}, $_, 1 )
+			  and ( ":" ne substr $self->{line}, $_ + 1, 1 )
+			  and ( ":" ne substr $self->{line}, $_ - 1, 1 )
+		  } 0 .. -1 + length $self->{line}
+	];
 }
 
 
