@@ -131,6 +131,7 @@ sub new {
 		line_cursor  => undef,
 		line_count   => 0,
 		label_colon_candidates => undef,
+		escape_scan_cache => undef,
 
 		# Parse state
 		token        => undef,
@@ -463,6 +464,7 @@ sub _fill_line {
 	$self->{line_length} = length $line;
 	$self->{line_count}++;
 	$self->{label_colon_candidates} = undef;
+	$self->{escape_scan_cache} = undef;
 
 	1;
 }

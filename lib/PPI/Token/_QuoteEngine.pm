@@ -111,29 +111,35 @@ sub _scan_for_character {
 sub _scan_for_unescaped_character {
 	my $class = shift;
 	my $t     = shift;
-	my $char  = (length $_[0] == 1) ? quotemeta shift : return undef;
-
-	# Create the search regex.
-	# Same as above but with a negative look-behind assertion.
-	my $search = qr/^(.*?(?<!\\)(?:\\\\)*$char)/;
+	my $char  = (length $_[0] == 1) ? shift : return undef;
 
 	my $string = '';
 	while ( exists $t->{line} ) {
-		# Get the search area for the current line
-		my $search_area
-			= $t->{line_cursor}
-			? substr( $t->{line}, $t->{line_cursor} )
-			: $t->{line};
-
 		# Can we find a match on this line
-		if ( $search_area =~ /$search/ ) {
-			# Found the character on this line
-			$t->{line_cursor} += length($1) - 1;
-			return $string . $1;
+		my $start = $t->{escape_scan_cache}{$char};
+		$start = $t->{line_cursor} if !$start or $t->{line_cursor} > $start;
+		my $position;
+		for my $scan_pos ( $start .. $t->{line_length} - 1 ) {
+			next if $char ne substr $t->{line}, $scan_pos, 1;
+			my $preceding_slashes = 0;
+			for my $check_pos ( reverse( $start .. $scan_pos - 1 ) ) {
+				last if "\\" ne substr $t->{line}, $check_pos, 1;
+				$preceding_slashes++;
+			}
+			next if $preceding_slashes % 2;
+			$t->{escape_scan_cache}{$char} = $position = $scan_pos;
+			last;
+		}
+
+		# Found the character on this line
+		if ( defined $position ) {
+			my $length = $position - $t->{line_cursor};
+			$t->{line_cursor} += $length;
+			return $string . substr $t->{line}, $t->{line_cursor} - $length, $length + 1;
 		}
 
 		# Load in the next line
-		$string .= $search_area;
+		$string .= substr $t->{line}, $t->{line_cursor};
 		my $rv = $t->_fill_line('inscan');
 		if ( $rv ) {
 			# Push to first character
