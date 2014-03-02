@@ -79,6 +79,7 @@ in private methods.
 # Make sure everything we need is loaded so
 # we don't have to go and load all of PPI.
 use strict;
+use Encode;
 use Params::Util    qw{_INSTANCE _SCALAR0 _ARRAY0};
 use List::MoreUtils ();
 use PPI::Util       ();
@@ -117,7 +118,8 @@ L<PPI::Exception> exception on error.
 =cut
 
 sub new {
-	my $class = ref($_[0]) || $_[0];
+	my ($class, $src, $opt) = @_;
+	$class = ref($class) || $class;
 
 	# Create the empty tokenizer struct
 	my $self = bless {
@@ -145,29 +147,29 @@ sub new {
 		perl6        => [],
 	}, $class;
 
-	if ( ! defined $_[1] ) {
+	if ( ! defined $src ) {
 		# We weren't given anything
 		PPI::Exception->throw("No source provided to Tokenizer");
 
-	} elsif ( ! ref $_[1] ) {
-		my $source = PPI::Util::_slurp($_[1]);
+	} elsif ( ! ref $src ) {
+		my $source = PPI::Util::_slurp($src);
 		if ( ref $source ) {
 			# Content returned by reference
-			$self->{source} = $$source;
+			$self->{source} = $opt->{utf8} ? Encode::decode_utf8($$source) : $$source;
 		} else {
 			# Errors returned as a string
 			return( $source );
 		}
 
-	} elsif ( _SCALAR0($_[1]) ) {
-		$self->{source} = ${$_[1]};
+	} elsif ( _SCALAR0($src) ) {
+		$self->{source} = ${$src};
 
-	} elsif ( _ARRAY0($_[1]) ) {
-		$self->{source} = join '', map { "\n" } @{$_[1]};
+	} elsif ( _ARRAY0($src) ) {
+		$self->{source} = join '', map { "\n" } @{$src};
 
 	} else {
 		# We don't support whatever this is
-		PPI::Exception->throw(ref($_[1]) . " is not supported as a source provider");
+		PPI::Exception->throw(ref($src) . " is not supported as a source provider");
 	}
 
 	# We can't handle a null string

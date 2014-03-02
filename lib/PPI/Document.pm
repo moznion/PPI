@@ -207,12 +207,12 @@ sub new {
 				eval {
 					local $SIG{ALRM} = sub { die "alarm\n" };
 					alarm( $timeout );
-					my $document = PPI::Lexer->lex_file( $source );
+					my $document = PPI::Lexer->lex_file( $source, {utf8 => $attr{utf8}});
 					return $class->_setattr( $document, %attr ) if $document;
 					alarm( 0 );
 				};
 			} else {
-				my $document = PPI::Lexer->lex_file( $source );
+				my $document = PPI::Lexer->lex_file( $source, {utf8 => $attr{utf8}} );
 				return $class->_setattr( $document, %attr ) if $document;
 			}
 		}

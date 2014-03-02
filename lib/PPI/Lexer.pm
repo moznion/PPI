@@ -150,13 +150,15 @@ Returns a L<PPI::Document> object, or C<undef> on error.
 sub lex_file {
 	my $self = ref $_[0] ? shift : shift->new;
 	my $file = _STRING(shift);
+	my $opt  = shift;
+
 	unless ( defined $file ) {
 		return $self->_error("Did not pass a filename to PPI::Lexer::lex_file");
 	}
 
 	# Create the Tokenizer
 	my $Tokenizer = eval {
-		X_TOKENIZER->new($file);
+		X_TOKENIZER->new($file, $opt);
 	};
 	if ( _INSTANCE($@, 'PPI::Exception') ) {
 		return $self->_error( $@->message );
